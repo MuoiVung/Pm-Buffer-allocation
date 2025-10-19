@@ -1,13 +1,13 @@
-
+"use client";
 
 import React, { useState, useCallback } from 'react';
-import { runGA } from './services/geneticAlgorithm';
-import InputControl from './components/InputControl';
-import ResultsDisplay from './components/ResultsDisplay';
-import { OptimizationChart, BufferAllocationChart } from './components/Charts';
-import type { GASettings, OptimizationParams, OptimizationResult, ProgressData } from './types';
+import { runGA } from '../services/geneticAlgorithm';
+import InputControl from '../components/InputControl';
+import ResultsDisplay from '../components/ResultsDisplay';
+import { OptimizationChart, BufferAllocationChart } from '../components/Charts';
+import type { GASettings, OptimizationParams, OptimizationResult, ProgressData } from '../types';
 
-const App: React.FC = () => {
+const HomePage: React.FC = () => {
   const [params, setParams] = useState<OptimizationParams>({
     numStations: 5,
     totalBuffers: 20,
@@ -45,9 +45,6 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The for-await-of loop does not expose the generator's return value,
-    // and `gaRunner.return()` was used incorrectly.
-    // Manually iterate with .next() to capture both yielded values and the final return value.
     while (true) {
       // FIX: Await the result of .next() without destructuring to allow TypeScript to
       // correctly narrow the type of `value` based on the `done` property.
@@ -67,7 +64,7 @@ const App: React.FC = () => {
   const MemoizedBufferAllocationChart = React.memo(BufferAllocationChart);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-500">
@@ -136,4 +133,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default HomePage;

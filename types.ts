@@ -1,4 +1,3 @@
-
 export interface GASettings {
   populationSize: number;
   generations: number;
