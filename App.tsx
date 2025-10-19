@@ -6,68 +6,25 @@ import { OptimizationChart, BufferAllocationChart } from './components/Charts';
 import type { GASettings, OptimizationParams, OptimizationResult, ProgressData } from './types';
 
 const App: React.FC = () => {
-  const [params, setParams] = useState<OptimizationParams>(() => {
-    try {
-      const savedParams = localStorage.getItem('bap_params');
-      return savedParams ? JSON.parse(savedParams) : {
-        numStations: 5,
-        totalBuffers: 20,
-        w1: 1.0,
-        w2: 2.0,
-      };
-    } catch (error) {
-      console.error("Failed to load params from localStorage", error);
-      return {
-        numStations: 5,
-        totalBuffers: 20,
-        w1: 1.0,
-        w2: 2.0,
-      };
-    }
+  const [params, setParams] = useState<OptimizationParams>({
+    numStations: 5,
+    totalBuffers: 20,
+    w1: 1.0,
+    w2: 2.0,
   });
 
-  const [gaSettings, setGaSettings] = useState<GASettings>(() => {
-    try {
-      const savedGaSettings = localStorage.getItem('bap_gaSettings');
-      return savedGaSettings ? JSON.parse(savedGaSettings) : {
-        populationSize: 50,
-        generations: 100,
-        mutationRate: 0.1,
-        crossoverRate: 0.8,
-        tournamentSize: 5,
-      };
-    } catch (error) {
-      console.error("Failed to load GA settings from localStorage", error);
-      return {
-        populationSize: 50,
-        generations: 100,
-        mutationRate: 0.1,
-        crossoverRate: 0.8,
-        tournamentSize: 5,
-      };
-    }
+  const [gaSettings, setGaSettings] = useState<GASettings>({
+    populationSize: 50,
+    generations: 100,
+    mutationRate: 0.1,
+    crossoverRate: 0.8,
+    tournamentSize: 5,
   });
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progress, setProgress] = useState<ProgressData[]>([]);
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [currentGeneration, setCurrentGeneration] = useState<number>(0);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bap_params', JSON.stringify(params));
-    } catch (error) {
-      console.error("Failed to save params to localStorage", error);
-    }
-  }, [params]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bap_gaSettings', JSON.stringify(gaSettings));
-    } catch (error) {
-      console.error("Failed to save GA settings to localStorage", error);
-    }
-  }, [gaSettings]);
 
   useEffect(() => {
     // When parameters change, the previous result is no longer valid.
@@ -93,20 +50,21 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The original `while (true)` loop structure caused TypeScript type inference errors.
-    // This revised loop is more explicit for the type checker. It iterates while the
-    // generator is not done, which correctly narrows the type of `iteration.value`
-    // to `ProgressData` within the loop, and handles the final `OptimizationResult`.
+    // FIX: The previous `while(true)` loop implementation had issues with TypeScript's
+    // type inference for async generators. A `while (!iteration.done)` loop is a more
+    // robust pattern that correctly narrows the types from the generator.
     let iteration = await gaRunner.next();
     while (!iteration.done) {
+      // Within the loop, `iteration.value` is correctly inferred as `ProgressData`.
       progressUpdates.push(iteration.value);
       setProgress([...progressUpdates]);
       setCurrentGeneration(iteration.value.generation);
       iteration = await gaRunner.next();
     }
 
-    // When the loop finishes, `iteration.done` is true, and `iteration.value` is the `OptimizationResult`.
+    // When the generator is done, `iteration.value` is the `OptimizationResult`.
     setResult(iteration.value);
+
     setIsRunning(false);
   };
 
@@ -130,7 +88,7 @@ const App: React.FC = () => {
             <div>
               <h2 className="text-xl font-bold mb-4 border-b border-gray-600 pb-2">Problem Parameters</h2>
               <InputControl label="Number of Stations (K)" value={params.numStations} onChange={v => handleParamChange('numStations', v)} min={2} max={20} tooltip="Total stations in the production line."/>
-              <InputControl label="Total Available Buffers (B_Total)" value={params.totalBuffers} onChange={v => handleParamChange('totalBuffers', v)} min={1} max={500} tooltip="The maximum number of buffers to distribute."/>
+              <InputControl label="Total Available Buffers (B_Total)" value={params.totalBuffers} onChange={v => handleParamchange('totalBuffers', v)} min={1} max={500} tooltip="The maximum number of buffers to distribute."/>
               <InputControl label="Throughput Weight (w1)" value={params.w1} onChange={v => handleParamChange('w1', v)} step={0.1} min={0.1} max={10} tooltip="Importance of maximizing throughput."/>
               <InputControl label="Buffer Cost Weight (w2)" value={params.w2} onChange={v => handleParamChange('w2', v)} step={0.1} min={0.1} max={10} tooltip="Cost or importance of minimizing total buffers."/>
             </div>
