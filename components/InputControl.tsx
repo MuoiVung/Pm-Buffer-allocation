@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface InputControlProps {
@@ -34,7 +35,8 @@ const InputControl: React.FC<InputControlProps> = ({ label, value, onChange, ste
           step={step}
           min={min}
           max={max}
-          className="w-full bg-transparent text-white px-3 py-2 outline-none"
+          className="w-full bg-transparent text-white px-3 py-2 outline-none appearance-none"
+          style={{ MozAppearance: 'textfield' }}
         />
       </div>
     </div>

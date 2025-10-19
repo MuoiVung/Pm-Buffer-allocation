@@ -1,3 +1,4 @@
+
 import type { Chromosome, Population, GASettings, OptimizationParams, ProgressData, OptimizationResult } from '../types';
 
 // Mock throughput prediction function (simulating an ML model)
