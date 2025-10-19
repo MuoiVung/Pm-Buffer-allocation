@@ -45,17 +45,19 @@ const HomePage: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
+    // FIX: Restructured the loop to use an if/else block. This helps TypeScript's
+    // control-flow analysis correctly narrow `iteration.value` to type `ProgressData`
+    // in the else branch, resolving the type errors.
     while (true) {
-      // FIX: Await the result of .next() without destructuring to allow TypeScript to
-      // correctly narrow the type of `value` based on the `done` property.
       const iteration = await gaRunner.next();
       if (iteration.done) {
         setResult(iteration.value);
         break;
+      } else {
+        progressUpdates.push(iteration.value);
+        setProgress([...progressUpdates]);
+        setCurrentGeneration(iteration.value.generation);
       }
-      progressUpdates.push(iteration.value);
-      setProgress([...progressUpdates]);
-      setCurrentGeneration(iteration.value.generation);
     }
 
     setIsRunning(false);
