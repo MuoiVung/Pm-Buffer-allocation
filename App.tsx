@@ -69,6 +69,12 @@ const App: React.FC = () => {
     }
   }, [gaSettings]);
 
+  useEffect(() => {
+    // When parameters change, the previous result is no longer valid.
+    // Clear it to avoid showing stale data and prompt the user to run again.
+    setResult(null);
+  }, [params, gaSettings]);
+
 
   const handleParamChange = useCallback((field: keyof OptimizationParams, value: number) => {
     setParams(p => ({ ...p, [field]: value }));
@@ -87,21 +93,21 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The original loop structure caused issues with TypeScript's type inference.
-    // Using an explicit `else` block allows the compiler to correctly narrow the type
-    // of `iteration.value` to `ProgressData` when `iteration.done` is false.
-    while (true) {
-      const iteration = await gaRunner.next();
-      if (iteration.done) {
-        setResult(iteration.value);
-        setIsRunning(false);
-        break;
-      } else {
-        progressUpdates.push(iteration.value);
-        setProgress([...progressUpdates]);
-        setCurrentGeneration(iteration.value.generation);
-      }
+    // FIX: The original `while (true)` loop structure caused TypeScript type inference errors.
+    // This revised loop is more explicit for the type checker. It iterates while the
+    // generator is not done, which correctly narrows the type of `iteration.value`
+    // to `ProgressData` within the loop, and handles the final `OptimizationResult`.
+    let iteration = await gaRunner.next();
+    while (!iteration.done) {
+      progressUpdates.push(iteration.value);
+      setProgress([...progressUpdates]);
+      setCurrentGeneration(iteration.value.generation);
+      iteration = await gaRunner.next();
     }
+
+    // When the loop finishes, `iteration.done` is true, and `iteration.value` is the `OptimizationResult`.
+    setResult(iteration.value);
+    setIsRunning(false);
   };
 
   const MemoizedBufferAllocationChart = React.memo(BufferAllocationChart);

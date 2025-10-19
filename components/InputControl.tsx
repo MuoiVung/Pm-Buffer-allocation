@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface InputControlProps {
   label: string;
@@ -12,10 +11,40 @@ interface InputControlProps {
 }
 
 const InputControl: React.FC<InputControlProps> = ({ label, value, onChange, step = 1, min = 0, max = 1000, tooltip }) => {
+  const [displayValue, setDisplayValue] = useState<string>(value.toString());
+
+  useEffect(() => {
+    // Sync local state if prop value changes from outside,
+    // but avoid doing so if the user is typing a value that just hasn't been committed yet.
+    const numDisplayValue = step === 1 ? parseInt(displayValue, 10) : parseFloat(displayValue);
+    if (isNaN(numDisplayValue) || numDisplayValue !== value) {
+        setDisplayValue(value.toString());
+    }
+  }, [value, step]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numValue = e.target.valueAsNumber || 0;
-    onChange(numValue);
+    setDisplayValue(e.target.value);
   };
+
+  const handleBlur = () => {
+    let numValue = step === 1 ? parseInt(displayValue, 10) : parseFloat(displayValue);
+
+    if (isNaN(numValue)) {
+      numValue = min;
+    }
+
+    // Clamp value to be within min/max bounds
+    if (max !== undefined) {
+      numValue = Math.min(numValue, max);
+    }
+    if (min !== undefined) {
+      numValue = Math.max(numValue, min);
+    }
+
+    onChange(numValue);
+    setDisplayValue(numValue.toString());
+  };
+
 
   return (
     <div className="mb-4">
@@ -30,8 +59,9 @@ const InputControl: React.FC<InputControlProps> = ({ label, value, onChange, ste
       <div className="flex items-center bg-gray-700 rounded-md">
         <input
           type="number"
-          value={value}
+          value={displayValue}
           onChange={handleChange}
+          onBlur={handleBlur}
           step={step}
           min={min}
           max={max}
