@@ -87,21 +87,20 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The original loop with a `let` variable for the iterator result was causing
-    // issues with TypeScript's type inference. This revised `while(true)` loop uses a
-    // block-scoped `const` for the result on each iteration. This allows TypeScript
-    // to correctly narrow the type of `iteration.value` based on the `iteration.done`
-    // property, resolving the type errors.
+    // FIX: The original loop structure caused issues with TypeScript's type inference.
+    // Using an explicit `else` block allows the compiler to correctly narrow the type
+    // of `iteration.value` to `ProgressData` when `iteration.done` is false.
     while (true) {
       const iteration = await gaRunner.next();
       if (iteration.done) {
         setResult(iteration.value);
         setIsRunning(false);
         break;
+      } else {
+        progressUpdates.push(iteration.value);
+        setProgress([...progressUpdates]);
+        setCurrentGeneration(iteration.value.generation);
       }
-      progressUpdates.push(iteration.value);
-      setProgress([...progressUpdates]);
-      setCurrentGeneration(iteration.value.generation);
     }
   };
 
