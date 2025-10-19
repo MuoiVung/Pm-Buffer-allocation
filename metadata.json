@@ -1,0 +1,5 @@
+{
+  "name": "Buffer Allocation Optimizer",
+  "description": "An application to solve the Buffer Allocation Problem (BAP) using a Genetic Algorithm. This tool helps optimize production line efficiency by finding the best buffer distribution to maximize throughput while minimizing costs, based on a simulated machine learning model.",
+  "requestFramePermissions": []
+}
