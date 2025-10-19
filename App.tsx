@@ -87,21 +87,22 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The previous while loop structure had issues with TypeScript's type inference
-    // for async generators. This `while (true)` loop with destructuring inside ensures
-    // that the type of `value` is correctly narrowed based on the `done` property.
+    // FIX: The original loop with a `let` variable for the iterator result was causing
+    // issues with TypeScript's type inference. This revised `while(true)` loop uses a
+    // block-scoped `const` for the result on each iteration. This allows TypeScript
+    // to correctly narrow the type of `iteration.value` based on the `iteration.done`
+    // property, resolving the type errors.
     while (true) {
-      const { done, value } = await gaRunner.next();
-      if (done) {
-        setResult(value);
+      const iteration = await gaRunner.next();
+      if (iteration.done) {
+        setResult(iteration.value);
+        setIsRunning(false);
         break;
       }
-      progressUpdates.push(value);
+      progressUpdates.push(iteration.value);
       setProgress([...progressUpdates]);
-      setCurrentGeneration(value.generation);
+      setCurrentGeneration(iteration.value.generation);
     }
-
-    setIsRunning(false);
   };
 
   const MemoizedBufferAllocationChart = React.memo(BufferAllocationChart);
