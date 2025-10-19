@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { ProgressData, Chromosome } from '../types';
@@ -15,11 +14,19 @@ export const OptimizationChart: React.FC<OptimizationChartProps> = ({ data }) =>
         <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
           <XAxis dataKey="generation" stroke="#A0AEC0" />
-          <YAxis stroke="#A0AEC0" domain={['dataMin - 10', 'dataMax + 10']} />
-          <Tooltip contentStyle={{ backgroundColor: '#2D3748', border: '1px solid #4A5568' }} />
+          <YAxis 
+            stroke="#A0AEC0" 
+            domain={['dataMin - 10', 'dataMax + 10']}
+            tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(2) : tick}
+          />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#2D3748', border: '1px solid #4A5568' }}
+            formatter={(value) => typeof value === 'number' ? value.toFixed(2) : value}
+            labelFormatter={(label) => `Generation: ${label}`}
+          />
           <Legend />
-          <Line type="monotone" dataKey="bestFitness" stroke="#48BB78" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="avgFitness" stroke="#4299E1" strokeWidth={1} dot={false} />
+          <Line type="monotone" dataKey="bestFitness" name="Best Fitness" stroke="#48BB78" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="avgFitness" name="Average Fitness" stroke="#4299E1" strokeWidth={1} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -45,7 +52,7 @@ export const BufferAllocationChart: React.FC<BufferAllocationChartProps> = ({ da
           <XAxis dataKey="name" stroke="#A0AEC0" />
           <YAxis stroke="#A0AEC0" />
           <Tooltip contentStyle={{ backgroundColor: '#2D3748', border: '1px solid #4A5568' }} />
-          <Bar dataKey="buffers" fill="#63B3ED" />
+          <Bar dataKey="buffers" name="Buffers" fill="#63B3ED" />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { runGA } from './services/geneticAlgorithm';
 import InputControl from './components/InputControl';
 import ResultsDisplay from './components/ResultsDisplay';
@@ -7,25 +6,69 @@ import { OptimizationChart, BufferAllocationChart } from './components/Charts';
 import type { GASettings, OptimizationParams, OptimizationResult, ProgressData } from './types';
 
 const App: React.FC = () => {
-  const [params, setParams] = useState<OptimizationParams>({
-    numStations: 5,
-    totalBuffers: 20,
-    w1: 1.0,
-    w2: 2.0,
+  const [params, setParams] = useState<OptimizationParams>(() => {
+    try {
+      const savedParams = localStorage.getItem('bap_params');
+      return savedParams ? JSON.parse(savedParams) : {
+        numStations: 5,
+        totalBuffers: 20,
+        w1: 1.0,
+        w2: 2.0,
+      };
+    } catch (error) {
+      console.error("Failed to load params from localStorage", error);
+      return {
+        numStations: 5,
+        totalBuffers: 20,
+        w1: 1.0,
+        w2: 2.0,
+      };
+    }
   });
 
-  const [gaSettings, setGaSettings] = useState<GASettings>({
-    populationSize: 50,
-    generations: 100,
-    mutationRate: 0.1,
-    crossoverRate: 0.8,
-    tournamentSize: 5,
+  const [gaSettings, setGaSettings] = useState<GASettings>(() => {
+    try {
+      const savedGaSettings = localStorage.getItem('bap_gaSettings');
+      return savedGaSettings ? JSON.parse(savedGaSettings) : {
+        populationSize: 50,
+        generations: 100,
+        mutationRate: 0.1,
+        crossoverRate: 0.8,
+        tournamentSize: 5,
+      };
+    } catch (error) {
+      console.error("Failed to load GA settings from localStorage", error);
+      return {
+        populationSize: 50,
+        generations: 100,
+        mutationRate: 0.1,
+        crossoverRate: 0.8,
+        tournamentSize: 5,
+      };
+    }
   });
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progress, setProgress] = useState<ProgressData[]>([]);
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [currentGeneration, setCurrentGeneration] = useState<number>(0);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bap_params', JSON.stringify(params));
+    } catch (error) {
+      console.error("Failed to save params to localStorage", error);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bap_gaSettings', JSON.stringify(gaSettings));
+    } catch (error) {
+      console.error("Failed to save GA settings to localStorage", error);
+    }
+  }, [gaSettings]);
+
 
   const handleParamChange = useCallback((field: keyof OptimizationParams, value: number) => {
     setParams(p => ({ ...p, [field]: value }));
@@ -44,20 +87,18 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The for-await-of loop does not expose the generator's return value,
-    // and `gaRunner.return()` was used incorrectly.
-    // Manually iterate with .next() to capture both yielded values and the final return value.
-    while (true) {
-      const { value, done } = await gaRunner.next();
-      if (done) {
-        setResult(value);
-        break;
-      }
-      progressUpdates.push(value);
+    // FIX: The original loop structure was causing issues with TypeScript's type inference
+    // for the async generator's result. This revised loop structure helps the compiler
+    // correctly narrow the type of `iteration.value` based on the `iteration.done` property.
+    let iteration = await gaRunner.next();
+    while (!iteration.done) {
+      progressUpdates.push(iteration.value);
       setProgress([...progressUpdates]);
-      setCurrentGeneration(value.generation);
+      setCurrentGeneration(iteration.value.generation);
+      iteration = await gaRunner.next();
     }
 
+    setResult(iteration.value);
     setIsRunning(false);
   };
 
