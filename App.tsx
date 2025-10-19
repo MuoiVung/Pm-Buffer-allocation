@@ -87,18 +87,20 @@ const App: React.FC = () => {
     const progressUpdates: ProgressData[] = [];
     const gaRunner = runGA(params, gaSettings);
 
-    // FIX: The original loop structure was causing issues with TypeScript's type inference
-    // for the async generator's result. This revised loop structure helps the compiler
-    // correctly narrow the type of `iteration.value` based on the `iteration.done` property.
-    let iteration = await gaRunner.next();
-    while (!iteration.done) {
-      progressUpdates.push(iteration.value);
+    // FIX: The previous while loop structure had issues with TypeScript's type inference
+    // for async generators. This `while (true)` loop with destructuring inside ensures
+    // that the type of `value` is correctly narrowed based on the `done` property.
+    while (true) {
+      const { done, value } = await gaRunner.next();
+      if (done) {
+        setResult(value);
+        break;
+      }
+      progressUpdates.push(value);
       setProgress([...progressUpdates]);
-      setCurrentGeneration(iteration.value.generation);
-      iteration = await gaRunner.next();
+      setCurrentGeneration(value.generation);
     }
 
-    setResult(iteration.value);
     setIsRunning(false);
   };
 
